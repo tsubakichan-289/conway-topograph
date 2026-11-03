@@ -1,13 +1,12 @@
 # Conway Topograph
 
-整数係数二元二次形式を Conway topograph として観察する Rust / eframe デスクトップアプリです。
-組合せ構造・ラベル・係数復元は BigInt による厳密計算です。
-Farey 三角形の双曲内心と、その双対辺を Poincaré 円板上に表示します。
-面の数値は面領域内に表示し、木の頂点の番号としては表示しません。
+A Rust / eframe desktop application for exploring integer binary quadratic forms through Conway topographs. It displays hyperbolic incenters of Farey triangles and their dual edges in the Poincaré disk.
 
-## 起動
+The combinatorial structure, region labels, and reconstruction of coefficients use exact `BigInt` arithmetic. Numerical labels belong to regions, rather than to vertices of the tree.
 
-Rust stable 1.95 以降、Linux の Wayland または X11 / OpenGL デスクトップ環境が必要です。
+## Getting started
+
+Requires Rust 1.95 or later and a Linux desktop with Wayland or X11 and OpenGL.
 
 ```sh
 git clone https://github.com/tsubakichan-289/conway-topograph.git
@@ -15,104 +14,96 @@ cd conway-topograph
 cargo run --release
 ```
 
-NixOS では開発用ライブラリを含むシェルを利用してください。
+On NixOS, use the supplied development shell:
 
 ```sh
 nix-shell shell.nix
 cargo run --release
 ```
 
-この作業環境の Cargo キャッシュを使う場合：
+If you already have a populated project-local Cargo cache:
 
 ```sh
 export CARGO_HOME="$PWD/.cargo-home"
 nix-shell shell.nix --run 'cargo run --release --offline'
 ```
 
-## 操作
+## Exploring a form
 
-係数と視点リセットを中心にした簡素なUIです。形式のプリセットは設けていません。
-`Fixed faces`・`Display`・`Colors`・`Explore`・`Export / files` は必要なときだけ開きます。
-面を選ぶと下部の編集欄が現れ、隣接関係・井戸の判定根拠は `Face details` で確認できます。
+Enter coefficients and select **Apply coefficients**. The interface initially focuses on coefficient input and view reset; open **Fixed faces**, **Display**, **Colors**, **Explore**, and **Export / files** as needed. There are no preset forms.
 
-`Colors` では円板の背景・外側のキャンバス背景・通常の線と頂点・面の文字・円板の枠を選べます。
-色見本をクリックしてカラーピッカーを開いてください。変更は即座に反映され、自動保存とJSON保存、PNG/SVG出力にも引き継がれます。
-川・井戸・湖の強調色は、それぞれ青・金・水色です。
+| Action | Effect |
+| --- | --- |
+| Left-button drag | Move the viewpoint using a hyperbolic isometry of the disk |
+| Mouse wheel | Change the disk's display scale between 35% and 100% |
+| Click a region | Inspect its primitive vector, exact value, and visible neighbors |
+| Double-click | Move the hyperbolic viewpoint to the clicked position |
+| **Reset view** | Return to the initial Farey triangle and viewpoint |
+| **Find well / river / lake** | Follow exact integer descent, up to 4,096 steps |
+| **River next / Reverse** | Move one vertex along the boundary between nonzero regions of opposite signs |
 
-`Display` の `Value colors` は、面の値の符号と絶対値で塗るモードです。
-正の値を赤、負の値を青で表示し、絶対値が増えるほど黒に近づけます。
-`Color scale` を大きくすると、より大きな値まで明るく表示します。明るさが半分になる絶対値がこの数値です。
-零値の面は湖として水色に表示し、湖の表示をOFFにした場合は背景色にします。
-文字は面の色に合わせて読みやすい明暗に調整します。
-このモードでは井戸・選択面の塗りつぶしも赤青の規則を守り、井戸や川の線・頂点の強調と選択面の境界で位置を確認できます。
-モードとスケールは自動保存・JSON・PNG/SVG出力に反映されます。
+The selected region's editor appears below the disk. **Face details** shows adjacency information and the evidence used to identify wells.
 
-`Display` の `Graph` で描画するグラフを切り替えられます。
-`Topograph` は従来の木、`Dual` はその双対となる Farey 三角形、`Overlay` は両者の重ね合わせです。
-三角形の各辺は、元の辺を双曲距離で二等分し、直角に交わる円弧（または直径）です。
-三角形の頂点は円板の境界上にあり、表示範囲の末端でも三角形の3辺を描きます。
-面の着色・ラベル・面選択は従来の領域に対応します。線だけを見たい場合は配色を `Normal` にして各表示チェックをOFFにしてください。
-重ね合わせでは三角形を `Disk boundary` の色で描きます。
-グラフの切り替えも自動保存・JSON・PNG/SVG出力に反映されます。
+### Editing region labels
 
-- 左ドラッグ：円板の自己同型による双曲的な視点移動。
-- ホイール：円板の表示スケール（35–100%）。円板全体がキャンバス内に収まります。
-- 面クリック：原始ベクトル、厳密値、表示中の隣接面・辺・頂点を選択して下部に表示。
-- ダブルクリック：クリック位置へ双曲的に視点を移動。
-- `Reset view`：初期 Farey 三角形と視点に戻る。
-- `Find well / river / lake`：整数の descent を辿って特徴を探す（4096ステップ上限）。
-- `River next` / `Reverse`：非零異符号の共有面を持つ辺に沿って1頂点ずつ移動。
+The initial fixed regions correspond to `[1, 0]`, `[0, 1]`, and `[1, 1]`, with labels `A`, `C`, and `S`. **Apply three labels** reconstructs the form exactly as `a = A`, `c = C`, and `b = S - A - C`.
 
-係数の入力を `Apply coefficients` で確定します。初期固定面の入力欄は
-[1,0], [0,1], [1,1] に対応する A,C,S です。
-`Apply three labels` は a=A, c=C, b=S−A−C に相当する厳密な復元を行います。
+To use other regions, select a region and press **Fix this face**. Use **Replace** or **Remove** if three fixed regions are already present. Enter all three labels and press **Apply three labels**. **Apply selected label** changes only the selected region's label while retaining the other two fixed values.
 
-任意の面を編集するには、その面をクリックして `Fix this face` を押します。
-既に3面ある場合は固定欄の `Replace` で選択面と置き換えるか、`Remove` で減らします。
-3面を揃えてから各ラベルを入力し `Apply three labels` を押してください。
-下部の `Apply selected label` は選択面のみを変更し、他の2固定面を保持します。
-非一意・非整数係数・固定面不足の場合はエラーを表示し、確定済みの形式を保持します。
-係数を直接変更したときは固定面のラベルも新形式の評価に更新します。
+Nonunique solutions, noninteger coefficients, and insufficient fixed regions produce an error without replacing the committed form. Direct coefficient changes also update the fixed-region labels.
 
-川は青の太線、井戸は金色、湖は水色の面領域です。
-`Explore` 内の `Well evidence` に3方向の ΔQ と面の値を表示します。
-負定値では −Q の ascent を用います。二重井戸の平坦辺も強調します。
-平方判別式の湖と、その間の有限 separator は、非平方判別式の無限の川から区別しています。
-[数学モデルと出典](docs/MATHEMATICS.md)に条件と導出を記載しています。
+### Colors and graph layers
 
-## 保存・出力
+**Colors** controls the disk background, outer canvas, ordinary edges and vertices, region text, and disk boundary. Changes apply immediately and are included in saved settings and exports.
 
-設定と確定した係数・固定面・局所基底・視点・表示切替を JSON として eframe の保存領域に自動保存します。
-旧手動エディタとは別のキー `conway-exact-v1` を使います。
-`Save JSON` / `Load JSON` でファイルにも保存・復元できます。無効な設定や矛盾したラベルは拒否します。
-未確定の入力欄の内容は保存対象外です。
+**Display → Value colors** colors positive regions red and negative regions blue. Colors approach black as the absolute value increases. **Color scale** is the absolute value at which brightness reaches half its maximum. Zero-valued regions use the lake color, or the background color when lake display is disabled. Text colors adapt to the region background.
 
-パス欄の拡張子を `.svg` / `.png` / `.json` に置き換えて出力します。
-指定したファイルが存在する場合は上書きします。
-PNG/SVG は現在の有限描画範囲・選択面・表示切替を反映する1600×1600の円板図です。
-SVG の双対辺は境界直交円の arc コマンド（直径は line）です。
-PNG は同じ SVG を resvg で描画し、ラベルに egui の Hack フォントを使用します。
+**Display → Graph** offers three views:
 
-4つの例を GUI 接続なしで出力できます。
+- **Topograph**: the trivalent tree.
+- **Dual**: the corresponding Farey triangles.
+- **Overlay**: both structures together.
+
+Dual edges meet the corresponding tree edges perpendicularly at their hyperbolic midpoints. Triangle vertices lie on the disk boundary. All three sides of a triangle are drawn even at the edge of the generated view. Region coloring, labels, and selection retain their original region correspondence. Use the **Normal** color mode and disable annotations for a line-only view. In overlay mode, triangles use the **Disk boundary** color.
+
+### Wells, rivers, and lakes
+
+Rivers are highlighted in blue, wells in gold, and lakes in light blue. **Explore → Well evidence** shows the three directional changes in the form's value and the region values. Negative definite forms use ascent for the negated form. Flat edges of double wells are highlighted as well.
+
+The application distinguishes lakes and their finite separator for square discriminants from the infinite river for nonsquare discriminants. See the [mathematical model and references](docs/MATHEMATICS.md) for definitions and derivations; this document is currently in Japanese.
+
+## Saving and exporting
+
+The committed coefficients, fixed regions, local basis, viewpoint, and display settings are automatically saved as JSON in eframe's storage under `conway-exact-v1`. This key is separate from the legacy manual editor. Uncommitted input is not saved.
+
+**Save JSON** and **Load JSON** also support explicit files. Invalid settings or inconsistent labels are rejected.
+
+The export path uses the appropriate `.svg`, `.png`, or `.json` extension. Existing destination files are overwritten. PNG and SVG exports are 1600 × 1600 disk diagrams reflecting the current finite view, selected region, and display options. SVG uses circular arcs for dual edges, or straight lines for diameters. PNG is rendered from the same SVG with resvg and egui's Hack font for labels.
+
+Generate examples without opening a GUI:
 
 ```sh
 cargo run --example render_examples -- /tmp/topograph-examples
+cargo run --example render_dual -- /tmp/topograph-dual
 ```
 
-線だけの通常表示・双対グラフ・重ね合わせの比較画像は
-`cargo run --example render_dual -- /tmp/topograph-dual` で出力できます。
+The first command exports four examples. The second compares the ordinary, dual, and overlay views.
 
-## 構成・検証
+## Project structure
 
-- `core/src/algebra.rs`：形式、原始ベクトル、行列式、係数復元。
-- `core/src/topology.rs`：Farey 三角形と三価双対木。
-- `core/src/geometry.rs`：Cayley、内心、測地線、局所座標と等長変換。
-- `core/src/features.rs`：井戸、川、湖、厳密な descent。
-- `core/src/scene.rs`：可視枝の生成、画素枝刈り、有限予算、再利用キャッシュ。
-- `core/src/editor.rs`：3固定面による変更の確定とエラー時の保持。
-- `src/app.rs` / `render.rs`：egui UI・描画・操作。
-- `src/storage.rs` / `export.rs`：JSON・SVG・PNG。
-- `legacy/`：従来の手動ノードエディタを参照用に保存。
+| Location | Responsibility |
+| --- | --- |
+| `core/src/algebra.rs` | Forms, primitive vectors, determinants, coefficient reconstruction |
+| `core/src/topology.rs` | Farey triangles and the trivalent dual tree |
+| `core/src/geometry.rs` | Cayley transform, incenters, geodesics, local coordinates, isometries |
+| `core/src/features.rs` | Wells, rivers, lakes, exact descent |
+| `core/src/scene.rs` | Visible branches, pixel-based pruning, budgets, reusable caches |
+| `core/src/editor.rs` | Three-region edits and preservation of state on errors |
+| `src/app.rs`, `src/render.rs` | egui interface, drawing, interaction |
+| `src/storage.rs`, `src/export.rs` | JSON persistence and image exports |
+| `legacy/` | Previous manual node editor, retained for reference |
+
+## Development checks
 
 ```sh
 cargo fmt --all -- --check
@@ -121,21 +112,22 @@ cargo test --workspace
 cargo check --workspace
 ```
 
-依存クレートが既にキャッシュにある場合は各コマンドに `--offline` を追加できます。
-GUI 非依存のコアだけの実行は `cargo test -p topograph-core`。
-テストは依頼の12項目に加え、変更の確定、JSON検証、実際のPNG復号、eguiの面選択・ドラッグを含みます。
+Add `--offline` when dependencies are already cached. To run only the GUI-independent core tests:
 
-## 制限
+```sh
+cargo test -p topograph-core
+```
 
-有限の表示を、局所深さ（8–64）、最大2500頂点、画素サイズで制限します。
-パン中も必要な範囲だけを再生成し、既存の隣接関係と内心座標を再利用します。
-キャッシュは24000ノードを超えた次の更新で整理します。
-境界の極小枝や文字が入らない領域は省略します。省略した面の情報は移動や下部の情報表示で確認してください。
-湖の着色も生成済みの面パッチに限ります。
+Tests cover algebra, topology-related behavior, geometry, feature detection, editing, JSON validation, PNG decoding, and egui region selection and dragging. The [verification notes](docs/VERIFICATION.md), currently in Japanese, distinguish completed checks from environment-dependent GUI validation.
 
-幾何座標は f64、画面座標は f32 です。曲線の画素分割は有限近似です。
-深い移動では整数局所基底を取り直して桁落ちを抑えますが、円板境界での無限解像度は提供しません。
-川の全周期・Pell の基本解、特徴の全域分類を有限探索で保証する機能は実装していません。
-非常に大きい係数では descent の上限に達し得ます。その場合はエラーを表示します。
+## Limitations
 
-[検証記録](docs/VERIFICATION.md)で、実施済みチェックと実ウィンドウ起動の環境制約を区別しています。
+Rendering is finite: local depth is limited to 8–64, with at most 2,500 vertices and additional pixel-size pruning. Panning regenerates only the required area and reuses adjacency and incenter data. The cache is pruned on the next update after exceeding 24,000 nodes. Very small boundary branches and labels that do not fit are omitted. Lake coloring is restricted to generated region patches.
+
+Geometry uses `f64`, screen coordinates use `f32`, and curves are approximated by finite pixel segments. Recomputing the integer local basis during deep navigation reduces cancellation, but the disk boundary does not have infinite resolution.
+
+Finite exploration does not guarantee complete river periods, fundamental Pell solutions, or a global classification of all features. Very large coefficients can reach the descent limit, in which case the application reports an error.
+
+---
+
+[日本語版 README](README.ja.md)
