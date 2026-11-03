@@ -1,0 +1,18 @@
+/target
+/.cargo-home
+/core/target
+/topograph.png
+/topograph.svg
+/topograph.json
+
+# Local credentials, caches, and editor state
+.env
+.env.*
+.aws/
+.codex/
+.agents/
+.cache/
+.cargo-home/
+.cargo-cache/
+__pycache__/
+.DS_Store
